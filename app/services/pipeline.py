@@ -49,7 +49,8 @@ def run_pipeline_task(input_csv_path: str, output_csv_path: str):
         engine_state["progress"] = 0
         review_records = []
 
-        for index, row in df.iterrows():
+        # for index, row in df.iterrows():
+        for current_step, (_, row) in enumerate(df.iterrows(), start=1):
             if stop_event.is_set():
                 engine_state["status"] = "Engine stopped by user. Saving available data..."
                 break
@@ -89,9 +90,10 @@ def run_pipeline_task(input_csv_path: str, output_csv_path: str):
                 "ProfileURL": lead_data.ProfileURL,
                 "GeneratedMessage": pitch,
             })
+            
 
-            engine_state["progress"] = index + 1
-            engine_state["status"] = f"Processed {index + 1} of {len(df)} leads..."
+            engine_state["progress"] = current_step
+            engine_state["status"] = f"Processed {current_step} of {len(df)} leads..."
             time.sleep(0.4)
 
         output_df = pd.DataFrame(review_records)
