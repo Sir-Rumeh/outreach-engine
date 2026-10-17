@@ -1,7 +1,9 @@
 import os
+import tempfile
 import threading
 import time
 import webbrowser
+from typing import Optional
 import pandas as pd
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
@@ -22,10 +24,10 @@ engine_state = {
     "running": False,
     "status": "Idle - Ready to extract",
     "progress": 0,
-    "total": 0,
-    "output_file": "outreach_review_queue.csv"
+    "total": 0
 }
 
+output_file_path: Optional[str] = None
 stop_event = threading.Event()
 
 def run_pipeline_task(input_csv_path: str, output_csv_path: str):
@@ -113,35 +115,54 @@ def read_root():
         <meta charset="UTF-8">
         <title>Outreach Engine Dashboard</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+            body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        </style>
     </head>
-    <body class="bg-gray-950 text-white font-sans min-h-screen flex flex-col items-center justify-center p-6">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
-            <h1 class="text-3xl font-bold mb-1 tracking-tight text-blue-400">Outreach Engine</h1>
-            <p class="text-gray-400 mb-8 text-sm">Data Extraction & AI Pitch Generator</p>
+    <body class="bg-[#090A0F] text-slate-100 min-h-screen flex flex-col items-center justify-center p-6 selection:bg-blue-500 selection:text-white relative overflow-hidden">
+        <!-- Background Ambient Glow Effects -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+        <div class="absolute bottom-10 right-10 w-[300px] h-[300px] bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div class="relative z-10 bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl shadow-2xl p-8 max-w-lg w-full">
             
+            <!-- Header Section -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-500 inline-block shadow-[0_0_12px_rgba(59,130,246,0.6)]"></span>
+                        Outreach Engine
+                    </h1>
+                    <p class="text-slate-400 text-xs mt-1 font-medium">Data Extraction & AI Pitch Generator</p>
+                </div>
+                <div id="statusBadge" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700/50 transition-all">
+                    Idle
+                </div>
+            </div>
             <!-- Center Action Button -->
-            <div class="my-6">
-                <button id="engineBtn" onclick="toggleEngine()" class="w-full py-4 px-6 rounded-xl font-bold text-lg transition-all shadow-lg bg-blue-600 hover:bg-blue-500 text-white cursor-pointer">
+            <div class="mb-6">
+                <button id="engineBtn" onclick="toggleEngine()" class="w-full py-4 px-6 rounded-2xl font-bold text-base transition-all duration-200 shadow-lg shadow-blue-600/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white cursor-pointer active:scale-[0.98]">
                     Start Engine
                 </button>
             </div>
 
             <!-- Status & Progress Box -->
-            <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 mb-6 text-left">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Engine Status</span>
-                    <span id="statusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-300">Idle</span>
+            <div class="bg-slate-950/60 border border-slate-800/60 rounded-2xl p-5 mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">System Status</span>
                 </div>
-                <p id="statusText" class="text-sm text-gray-300 font-mono">Ready to start extraction...</p>
-                <div class="mt-3 w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-                    <div id="progressBar" class="bg-blue-500 h-2 w-0 transition-all duration-300"></div>
+                <p id="statusText" class="text-sm text-slate-300 font-mono tracking-tight bg-slate-900/50 p-3 rounded-xl border border-slate-800/40">Ready to start extraction...</p>
+                <div class="mt-4 w-full bg-slate-900 rounded-full h-2.5 overflow-hidden p-[1px] border border-slate-800/80">
+                    <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full w-0 transition-all duration-300 shadow-[0_0_8px_rgba(59,130,246,0.4)]"></div>
                 </div>
             </div>
 
             <!-- Download CSV Section -->
             <div id="downloadContainer" class="hidden">
-                <a href="/download-csv" class="inline-block w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-center transition-all shadow-md">
-                    Download Extracted CSV 📥
+                <a id="downloadCsvLink" href="/download-csv" class="flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-emerald-600/90 hover:bg-emerald-500 text-white font-semibold rounded-2xl text-center transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98]">
+                    <span>Download Extracted CSV</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 </a>
             </div>
         </div>
@@ -167,20 +188,20 @@ def read_root():
 
                     if (data.running) {
                         btn.innerText = "Stop Engine";
-                        btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg transition-all shadow-lg bg-red-600 hover:bg-red-500 text-white cursor-pointer";
+                        btn.className = "w-full py-4 px-6 rounded-2xl font-bold text-base transition-all duration-200 shadow-lg shadow-red-600/20 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white cursor-pointer active:scale-[0.98]";
                         statusBadge.innerText = "Running";
-                        statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse";
+                        statusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 animate-pulse";
                         downloadContainer.classList.add('hidden');
                     } else {
                         btn.innerText = "Start Engine";
-                        btn.className = "w-full py-4 px-6 rounded-xl font-bold text-lg transition-all shadow-lg bg-blue-600 hover:bg-blue-500 text-white cursor-pointer";
+                        btn.className = "w-full py-4 px-6 rounded-2xl font-bold text-base transition-all duration-200 shadow-lg shadow-blue-600/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white cursor-pointer active:scale-[0.98]";
                         if (data.progress > 0 || data.status.includes("completed") || data.status.includes("stopped")) {
                             statusBadge.innerText = "Ready";
-                            statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                            statusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
                             downloadContainer.classList.remove('hidden');
                         } else {
                             statusBadge.innerText = "Idle";
-                            statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-300";
+                            statusBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700/50";
                         }
                     }
                 } catch (e) {
@@ -196,6 +217,29 @@ def read_root():
                 fetchStatus();
             }
 
+            document.getElementById('downloadCsvLink').addEventListener('click', async (event) => {
+                if (!window.showSaveFilePicker) return;
+                event.preventDefault();
+                const downloadUrl = event.currentTarget.href;
+
+                try {
+                    const fileHandle = await window.showSaveFilePicker({
+                        suggestedName: 'outreach_review_queue.csv',
+                        types: [{ description: 'CSV file', accept: { 'text/csv': ['.csv'] } }]
+                    });
+                    const response = await fetch(downloadUrl);
+                    if (!response.ok) throw new Error(`CSV download failed: ${response.status}`);
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(await response.blob());
+                    await writable.close();
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error(error);
+                        window.location.href = downloadUrl;
+                    }
+                }
+            });
+
             setInterval(fetchStatus, 1000);
         </script>
     </body>
@@ -208,8 +252,14 @@ def get_status():
 
 @app.post("/start")
 def start_engine():
+    global output_file_path
     if not engine_state["running"]:
-        t = threading.Thread(target=run_pipeline_task, args=("leads.csv", "outreach_review_queue.csv"))
+        with tempfile.NamedTemporaryFile(
+            prefix="outreach_review_queue_", suffix=".csv", delete=False
+        ) as output_file:
+            output_csv_path = output_file.name
+        output_file_path = output_csv_path
+        t = threading.Thread(target=run_pipeline_task, args=("leads.csv", output_csv_path))
         t.daemon = True
         t.start()
     return {"status": "started"}
@@ -222,8 +272,8 @@ def stop_engine():
 
 @app.get("/download-csv")
 def download_csv():
-    if os.path.exists("outreach_review_queue.csv"):
-        return FileResponse("outreach_review_queue.csv", media_type="text/csv", filename="outreach_review_queue.csv")
+    if output_file_path and os.path.exists(output_file_path):
+        return FileResponse(output_file_path, media_type="text/csv", filename="outreach_review_queue.csv")
     return {"error": "CSV file not found yet."}
 
 
