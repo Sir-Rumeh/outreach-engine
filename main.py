@@ -12,6 +12,7 @@ app.include_router(api_router)
 
 if __name__ == "__main__":
     import uvicorn
+    import os
 
     def open_browser():
         time.sleep(2.0)
@@ -19,4 +20,7 @@ if __name__ == "__main__":
 
     threading.Thread(target=open_browser, daemon=True).start()
 
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    host = os.getenv("HOST", "127.0.0.1")
+
+    uvicorn.run("main:app", host=host, port=port, reload=True)

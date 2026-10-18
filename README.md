@@ -6,7 +6,6 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![Google Gemini](https://img.shields.io/badge/Google%20Gemini-API-8E75B2?style=for-the-badge&logo=google&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
 
 ---
 
@@ -61,7 +60,7 @@ Ensure you have the following installed locally:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/outreach_engine.git
+   git clone https://github.com/Sir-Rumeh/outreach_engine.git
    cd outreach_engine
    ```
 
@@ -105,6 +104,7 @@ Ensure you have the following installed locally:
 ## 🖥️ Dashboard Interface
 
 > *(Screenshots / Demo GIFs will be added here after the UI update)*
+![Outreach Engine](image.png)
 
 ---
 
@@ -116,7 +116,3 @@ Ensure you have the following installed locally:
 - [ ] Automated testing suite (`pytest`)
 
 ---
-
-## 📜 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
