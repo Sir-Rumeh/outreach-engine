@@ -1,0 +1,125 @@
+<!-- Generated Queue & Telemetry Dashboard View -->
+<div id="telemetry-view" class="space-y-6 animate-fade-in">
+    
+    <!-- View Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Generated Queue & Telemetry</h1>
+            <p class="text-sm text-slate-500 mt-0.5">Visitor IP tracking, throughput metrics, and pipeline logs from SQLite.</p>
+        </div>
+        <button onclick="loadTelemetryData()" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Refresh Metrics
+        </button>
+    </div>
+
+    <!-- Summary Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Unique Visitors (IP)</p>
+                <h3 id="statUniqueVisitors" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
+                <p class="text-xs text-blue-600 font-medium mt-1">✓ Tracked by client IP</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl">
+                🌐
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Engine Runs</p>
+                <h3 id="statTotalRuns" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
+                <p class="text-xs text-amber-600 font-medium mt-1">✓ Execution count</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xl">
+                ⚡
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Leads Generated</p>
+                <h3 id="statTotalLeads" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
+                <p class="text-xs text-emerald-600 font-medium mt-1">✓ Total AI outputs</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl">
+                📊
+            </div>
+        </div>
+    </div>
+
+    <!-- Telemetry Table View -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-slate-900 text-sm">Visitor Activity & Pipeline Telemetry Table</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Real-time breakdown of client connection IPs and lead volume records.</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Live SQLite Feed
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/70 border-b border-slate-200 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
+                        <th class="py-3 px-6"># ID</th>
+                        <th class="py-3 px-6">Visitor IP Address</th>
+                        <th class="py-3 px-6">Timestamp</th>
+                        <th class="py-3 px-6">Leads Generated</th>
+                        <th class="py-3 px-6 text-right">Session Status</th>
+                    </tr>
+                </thead>
+                <tbody id="telemetryTableBody" class="divide-y divide-slate-100 text-sm text-slate-600">
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-slate-400 text-xs">Loading telemetry metrics...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadTelemetryData() {
+        try {
+            const res = await fetch('/api/telemetry');
+            const data = await res.json();
+            
+            // Update Metric Cards
+            document.getElementById('statUniqueVisitors').innerText = data.unique_visitors || 0;
+            document.getElementById('statTotalRuns').innerText = data.counters.total_runs || 0;
+            document.getElementById('statTotalLeads').innerText = data.counters.total_leads_processed || 0;
+
+            // Populate Table with Visitor Logs
+            const tbody = document.getElementById('telemetryTableBody');
+            tbody.innerHTML = '';
+
+            const visitors = data.recent_visitors || [];
+            if (visitors.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">No visitor logs recorded yet.</td></tr>`;
+                return;
+            }
+
+            visitors.forEach((v, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-4 px-6 font-mono text-xs text-slate-400">#${index + 1}</td>
+                    <td class="py-4 px-6 font-mono font-semibold text-slate-900">${v.ip}</td>
+                    <td class="py-4 px-6 text-xs text-slate-500">${v.timestamp}</td>
+                    <td class="py-4 px-6 font-mono text-blue-600 font-bold">${data.counters.total_leads_processed || 0}</td>
+                    <td class="py-4 px-6 text-right">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700">Active Session</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            console.error("Failed to load telemetry:", e);
+        }
+    }
+    loadTelemetryData();
+</script>

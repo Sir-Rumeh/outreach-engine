@@ -1,10 +1,10 @@
 import os
 import time
 import threading
-from typing import Optional
 import pandas as pd
+from typing import Optional
 from app.core.config import client
-from app.models.schemas import LeadItem
+from app.core.database import init_db, increment_counter
 
 # Engine State Management
 engine_state = {
@@ -32,48 +32,58 @@ def stop_pipeline():
         stop_event.set()
 
 def run_pipeline_task(input_csv_path: str, output_csv_path: str):
-    """Background task to extract leads, generate AI pitches, and save to CSV."""
+    """Background task that reads real leads from CSV using enumerate, calls Gemini API,
+    and records anonymous telemetry usage counters in SQLite.
+    """
     global engine_state
     engine_state["running"] = True
-    engine_state["status"] = "Processing leads..."
+    engine_state["status"] = "Initializing database and reading lead dataset..."
     stop_event.clear()
 
-    if not os.path.exists(input_csv_path):
-        engine_state["status"] = f"Error: Input file '{input_csv_path}' not found."
+    # Initialize SQLite Telemetry DB
+    init_db()
+
+    if not os.path.exists(input_csv_path) or os.path.getsize(input_csv_path) == 0:
+        engine_state["status"] = f"Error: Input file '{input_csv_path}' not found or empty."
         engine_state["running"] = False
         return
 
     try:
         df = pd.read_csv(input_csv_path)
+        if df.empty:
+            engine_state["status"] = "Error: Input CSV contains no rows."
+            engine_state["running"] = False
+            return
+
         engine_state["total"] = len(df)
         engine_state["progress"] = 0
         review_records = []
 
-        # for index, row in df.iterrows():
+        # Increment global run telemetry counter
+        increment_counter("total_runs", 1)
+
         for current_step, (_, row) in enumerate(df.iterrows(), start=1):
             if stop_event.is_set():
                 engine_state["status"] = "Engine stopped by user. Saving available data..."
                 break
 
-            # Validate input fields using Pydantic model defaults
-            lead_data = LeadItem(
-                Name=str(row.get("Name", "Founder")),
-                Company=str(row.get("Company", "Your Company")),
-                Email=str(row.get("Email", "")),
-                Channel=str(row.get("Channel", "LinkedIn")),
-                ProfileURL=str(row.get("ProfileURL", "#")),
-                Focus=str(row.get("Focus", "React and Next.js development"))
-            )
+            name = row.get("Name", "Founder")
+            company = row.get("Company", "Your Company")
+            email = row.get("Email", "")
+            profile_url = row.get("ProfileURL", "#")
+            focus = row.get("Focus", "React and Next.js development")
+            channel = row.get("Channel", "LinkedIn")
+            source_post = row.get("SourcePost", "Looking for engineering support.")
 
             # Generate AI-personalized pitch using Gemini
             pitch = ""
             if client:
                 try:
                     prompt = (
-                        f"Write a short, professional cold outreach message (under 120 words)"
-                        f" to {lead_data.Name} at {lead_data.Company}, who focuses on {lead_data.Focus}."
-                        f" Pitch Nosa, an experienced React/Next.js frontend engineer looking for"
-                        f" contract overflow work. Keep it direct and value-focused."
+                        f"Analyze this public post from {name} at {company}: '{source_post}' "
+                        f"(Focus: {focus}). Write a short, professional cold outreach message "
+                        f"(under 120 words) pitching Nosa, an experienced React/Next.js and "
+                        f"Python/FastAPI engineer looking for contract overflow work. Keep it direct and value-focused."
                     )
                     response = client.models.generate_content(
                         model="gemini-3.8-flash", contents=prompt
@@ -83,26 +93,29 @@ def run_pipeline_task(input_csv_path: str, output_csv_path: str):
                     pitch = f"[AI Error: {e}]"
 
             review_records.append({
-                "Name": lead_data.Name,
-                "Company": lead_data.Company,
-                "Email": lead_data.Email,
-                "Channel": lead_data.Channel,
-                "ProfileURL": lead_data.ProfileURL,
+                "Name": name,
+                "Company": company,
+                "Email": email,
+                "Channel": channel,
+                "ProfileURL": profile_url,
                 "GeneratedMessage": pitch,
             })
-            
+
+            # Increment throughput/lead telemetry counter in SQLite
+            increment_counter("total_leads_processed", 1)
 
             engine_state["progress"] = current_step
             engine_state["status"] = f"Processed {current_step} of {len(df)} leads..."
             time.sleep(0.4)
 
+        # Export available records to CSV
         output_df = pd.DataFrame(review_records)
         output_df.to_csv(output_csv_path, index=False)
         
         if stop_event.is_set():
             engine_state["status"] = "Stopped gracefully. Partial CSV ready for download!"
         else:
-            engine_state["status"] = "Extraction completed successfully!"
+            engine_state["status"] = f"Extraction completed successfully! Processed {len(review_records)} leads."
             
     except Exception as e:
         engine_state["status"] = f"Error: {e}"
