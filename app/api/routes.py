@@ -65,7 +65,7 @@ def start_engine():
             output_csv_path = output_file.name
         
         set_output_file_path(output_csv_path)
-        t = threading.Thread(target=run_pipeline_task, args=("leads.csv", output_csv_path))
+        t = threading.Thread(target=run_pipeline_task, args=(output_csv_path,))
         t.daemon = True
         t.start()
     return {"status": "started"}
