@@ -1,7 +1,10 @@
 import sqlite3
 import os
 
-DB_PATH = "outreach.db"
+# DB_PATH = "outreach.db"
+# Guarantees outreach.db stays at the project root level regardless of execution directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DB_PATH = os.path.join(BASE_DIR, "outreach.db")
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
