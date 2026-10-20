@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
-from app.core.database import init_db, get_telemetry_stats, log_visitor
+from app.core.database import init_db, get_telemetry_stats, get_error_logs, log_visitor
 from app.services.pipeline import (
     get_engine_state,
     stop_pipeline,
@@ -75,6 +75,11 @@ def get_telemetry_data():
     stats = get_telemetry_stats()
     return stats
 
+@router.get("/api/errors")
+def get_errors_data():
+    init_db()
+    return {"errors": get_error_logs()}
+
 @router.get("/api/telemetry-view", response_class=HTMLResponse)
 def get_telemetry_html_component():
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -84,3 +89,14 @@ def get_telemetry_html_component():
         with open(template_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<p class='text-red-500'>Telemetry component template missing.</p>", status_code=404)
+
+
+@router.get("/api/error-log-view", response_class=HTMLResponse)
+def get_error_log_html_component():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    template_path = os.path.join(base_dir, "templates", "error_log.html")
+    
+    if os.path.exists(template_path):
+        with open(template_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<p class='text-red-500'>Error log component template missing.</p>", status_code=404)

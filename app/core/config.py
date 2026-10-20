@@ -7,6 +7,7 @@ load_dotenv()
 class Settings:
     PROJECT_NAME: str = "Outreach Engine Dashboard"
     GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 settings = Settings()
 

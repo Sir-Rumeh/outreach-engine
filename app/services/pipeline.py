@@ -5,8 +5,8 @@ import json
 import pandas as pd
 from typing import Optional, List
 from google.genai import types
-from app.core.config import client
-from app.core.database import init_db, increment_counter
+from app.core.config import client, settings
+from app.core.database import init_db, increment_counter, log_error
 
 # Engine State Management
 engine_state = {
@@ -35,11 +35,10 @@ def stop_pipeline():
         stop_event.set()
 
 def fetch_live_founders_from_web(tech_stack: str, platforms: List[str]) -> pd.DataFrame:
-    """Uses Gemini with live Google Search Grounding to find real tech founders 
-    active on selected platforms within the last 24 hours needing engineering support.
-    """
     if not client:
-        raise RuntimeError("Gemini API client is not initialized. Check your GEMINI_API_KEY.")
+        err_msg = "Gemini API client is not initialized. Check your GEMINI_API_KEY."
+        log_error(err_msg, "Initialization")
+        raise RuntimeError(err_msg)
 
     stack_query = tech_stack if tech_stack else "react, next.js, typescript, python, fastapi"
     platforms_query = ", ".join(platforms) if platforms else "X/Twitter, LinkedIn, GitHub, Hacker News"
@@ -56,57 +55,40 @@ def fetch_live_founders_from_web(tech_stack: str, platforms: List[str]) -> pd.Da
         f"and SourcePost quotes or summarizes their actual recent post."
     )
 
-    max_retries = 3
-    last_error = None
-
-    for attempt in range(1, max_retries + 1):
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    tools=[{"google_search": {}}],
-                    temperature=0.2
-                )
+    try:
+        # Uses GEMINI_MODEL from .env via config.py
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[{"google_search": {}}],
+                temperature=0.2
             )
-            
-            raw_text = getattr(response, "text", None)
-            if not raw_text:
-                raise ValueError("Gemini returned an empty response during live web search.")
+        )
+        
+        raw_text = getattr(response, "text", None)
+        if not raw_text:
+            raise ValueError("Gemini returned an empty response during live web search.")
 
-            text = raw_text.strip()
-            if text.startswith("```json"):
-                text = text[7:]
-            if text.startswith("```"):
-                text = text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
+        text = raw_text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
 
-            leads_data = json.loads(text)
-            if isinstance(leads_data, list) and len(leads_data) > 0:
-                return pd.DataFrame(leads_data)
-            else:
-                raise ValueError("Parsed JSON did not contain a valid list of leads.")
+        leads_data = json.loads(text)
+        if isinstance(leads_data, list) and len(leads_data) > 0:
+            return pd.DataFrame(leads_data)
+        else:
+            raise ValueError("Parsed JSON did not contain a valid list of leads.")
 
-        except Exception as e:
-            last_error = e
-            error_str = str(e)
-            if ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str) and attempt < max_retries:
-                wait_time = attempt * 15
-                print(f"Rate limit hit (429). Retrying in {wait_time}s... (Attempt {attempt}/{max_retries})")
-                engine_state["status"] = f"Rate limit reached (429). Waiting {wait_time}s before retry ({attempt}/{max_retries})..."
-                time.sleep(wait_time)
-            else:
-                if attempt == max_retries:
-                    break
-                print(f"Attempt {attempt} failed: {e}")
-
-    # Explicit final raise so Pylance knows this function always returns a DataFrame or raises an Exception
-    raise RuntimeError(f"Live founder search failed after {max_retries} attempts: {last_error}")
-
-
-
+    except Exception as e:
+        err_msg = str(e)
+        log_error(err_msg, "Live Founder Search")
+        raise e
 
 def run_pipeline_task(output_csv_path: str, tech_stack: str, platforms: List[str]):
     global engine_state
@@ -145,7 +127,6 @@ def run_pipeline_task(output_csv_path: str, tech_stack: str, platforms: List[str
             channel = str(row.get("Channel", "X/Twitter"))
             source_post = str(row.get("SourcePost", "Looking for engineering support."))
 
-            # Draft personalized outreach pitch for this specific real founder
             pitch = ""
             if client:
                 try:
@@ -155,14 +136,16 @@ def run_pipeline_task(output_csv_path: str, tech_stack: str, platforms: List[str
                         f"pitching Nosa, an experienced React/Next.js and Python/FastAPI engineer looking for contract overflow work. "
                         f"Reference their specific post bottleneck directly. Keep it concise, high-value, and conversion-focused."
                     )
+                    # Uses GEMINI_MODEL from .env via config.py
                     pitch_response = client.models.generate_content(
-                        model="gemini-2.5-flash", contents=pitch_prompt
+                        model=settings.GEMINI_MODEL, contents=pitch_prompt
                     )
                     pitch = getattr(pitch_response, "text", "") or "[Pitch generation unavailable]"
                 except Exception as e:
-                    pitch = f"[AI Error: {e}]"
+                    pitch_err = f"[AI Pitch Error: {e}]"
+                    log_error(str(e), f"AI Pitch Generation ({name} at {company})")
+                    pitch = pitch_err
 
-            # Strict column ordering: CompanyWebsite directly after Company, and Location included
             review_records.append({
                 "Name": name,
                 "Company": company,
@@ -193,7 +176,9 @@ def run_pipeline_task(output_csv_path: str, tech_stack: str, platforms: List[str
             engine_state["status"] = f"Live extraction completed successfully! Processed {len(review_records)} real founders."
             
     except Exception as e:
-        engine_state["status"] = f"Error: {str(e)}"
+        err_msg = str(e)
+        log_error(err_msg, "Pipeline Execution Task")
+        engine_state["status"] = f"Error: {err_msg}"
         engine_state["percentage"] = 0
     finally:
         engine_state["running"] = False

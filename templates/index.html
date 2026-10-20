@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        svg { max-width: 100%; height: auto; } /* Prevent unstyled SVG expansion */
+        svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; } /* Fallback safeguard against layout breaking */
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-slate-800 min-h-screen flex font-sans antialiased">
@@ -30,16 +30,20 @@
             <!-- Nav Links -->
             <nav class="space-y-1">
                 <a href="#" onclick="switchView('home', event)" id="nav-home" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-900 bg-slate-100/80 transition-colors">
-                    <svg class="w-5 h-5 shrink-0 text-slate-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                     <span class="hidden lg:inline">Home</span>
                 </a>
                 <a href="#" onclick="switchView('pipeline', event)" id="nav-pipeline" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     <span class="hidden lg:inline">Leads Pipeline</span>
                 </a>
                 <a href="#" onclick="switchView('queue', event)" id="nav-queue" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     <span class="hidden lg:inline">Generated Queue</span>
+                </a>
+                <a href="#" onclick="switchView('error-log', event)" id="nav-error-log" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span class="hidden lg:inline">Error Log</span>
                 </a>
             </nav>
         </div>
@@ -96,7 +100,6 @@
             
             <!-- HOME VIEW -->
             <div id="view-home" class="space-y-6">
-                <!-- Greeting Header -->
                 <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Welcome back, Nosarummen</h1>
@@ -104,10 +107,7 @@
                     </div>
                 </div>
 
-                <!-- Hero Section: Grid with Action Box + Royal Blue Stat Card -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    <!-- Main Engine Controller Banner (2 cols) -->
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden space-y-4">
                         <div class="flex items-start justify-between">
                             <div class="w-full">
@@ -177,19 +177,19 @@
                         <div class="mt-4 flex items-center gap-3">
                             <button id="engineBtn" onclick="toggleEngine()" class="px-6 py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm cursor-pointer flex items-center gap-2">
                                 <span>Start Engine</span>
-                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                             </button>
 
                             <div id="downloadContainer" class="hidden">
                                 <a id="downloadCsvLink" href="/download-csv" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition-all shadow-sm flex items-center gap-2">
                                     <span>Download CSV</span>
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Royal Blue Banner Card (Terac style) -->
+                    <!-- Royal Blue Banner Card -->
                     <div class="bg-blue-600 rounded-2xl p-6 text-white flex flex-col justify-between shadow-md relative overflow-hidden">
                         <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
                         
@@ -200,13 +200,12 @@
                         </div>
 
                         <div class="pt-6 border-t border-white/15 flex items-center gap-2 text-xs font-medium text-blue-100">
-                            <svg class="w-4 h-4 shrink-0 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <svg class="text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <span>Search Grounding Active</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Lower Section: Pipeline Tasks / Activity View -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                     <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
                         <h3 class="font-bold text-slate-900 text-sm">Active Review Queue</h3>
@@ -238,7 +237,7 @@
                         <p class="text-sm text-slate-500 mt-0.5">Visitor IP tracking, throughput metrics, and pipeline logs from SQLite.</p>
                     </div>
                     <button onclick="loadTelemetryData()" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         Refresh Metrics
                     </button>
                 </div>
@@ -321,17 +320,23 @@
                 </div>
             </div>
 
+            <!-- ERROR LOG VIEW (Dynamically Loaded from error_log.html) -->
+            <div id="view-error-log" class="hidden space-y-6">
+                <!-- Loaded via JavaScript component fetch -->
+            </div>
+
         </div>
     </main>
 
     <script>
         let discoveryPulse = 0;
         let wasRunning = false;
+        let errorLogLoaded = false;
 
         async function switchView(viewName, event) {
             if (event) event.preventDefault();
             
-            ['home', 'pipeline', 'queue'].forEach(v => {
+            ['home', 'pipeline', 'queue', 'error-log'].forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 if(el) el.classList.add('hidden');
                 const nav = document.getElementById(`nav-${v}`);
@@ -352,6 +357,18 @@
 
             if (viewName === 'queue') {
                 loadTelemetryData();
+            } else if (viewName === 'error-log') {
+                if (!errorLogLoaded) {
+                    try {
+                        const res = await fetch('/api/error-log-view');
+                        const html = await res.text();
+                        document.getElementById('view-error-log').innerHTML = html;
+                        errorLogLoaded = true;
+                    } catch (e) {
+                        console.error("Failed to load error log view component:", e);
+                    }
+                }
+                loadErrorLogs();
             }
         }
 
@@ -389,6 +406,37 @@
                 });
             } catch (e) {
                 console.error("Failed to load telemetry:", e);
+            }
+        }
+
+        async function loadErrorLogs() {
+            try {
+                const res = await fetch('/api/errors');
+                const data = await res.json();
+                
+                const tbody = document.getElementById('errorTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                const errors = data.errors || [];
+                if (errors.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400 text-xs">No errors recorded. System running smoothly.</td></tr>`;
+                    return;
+                }
+
+                errors.forEach((err) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50/50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="py-4 px-6 font-mono text-xs text-slate-400">#${err.id}</td>
+                        <td class="py-4 px-6 font-medium text-slate-900"><span class="px-2 py-1 bg-rose-50 text-rose-700 rounded-md text-xs border border-rose-100 font-mono">${err.error_context}</span></td>
+                        <td class="py-4 px-6 font-mono text-xs text-rose-600 max-w-md truncate" title="${err.error_message}">${err.error_message}</td>
+                        <td class="py-4 px-6 text-xs text-slate-500 text-right">${err.timestamp}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error("Failed to load error logs:", e);
             }
         }
 
@@ -454,7 +502,7 @@
                         statusBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200";
                         queueStatusPill.innerText = "Idle";
                     }
-                    btn.innerHTML = `<span>Start Engine</span><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
+                    btn.innerHTML = `<span>Start Engine</span><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
                     btn.className = "px-6 py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm cursor-pointer flex items-center gap-2";
                 }
 
